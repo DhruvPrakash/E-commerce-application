@@ -1,11 +1,6 @@
 module.exports = {
-	//host: 'edis.cfxtkdjyn2xx.us-east-1.rds.amazonaws.com',
-	host: 'localhost',
+	host: 'edis.cfxtkdjyn2xx.us-east-1.rds.amazonaws.com',
 	user: 'root',
-	password: '',
+	password: 'password',
 	database: 'edis'
 }
-
-
-// Remember to change host back to line 2
-// Remember to change password to 'password'
