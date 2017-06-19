@@ -1,0 +1,28 @@
+{
+  "name": "session-mgmt",
+  "version": "1.0.0",
+  "description": "Initial tinkering with node until I figure out how to manage sessions",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "mocha test",
+    "serve": "nodemon index.js"
+  },
+  "author": "Dhruv",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.17.2",
+    "cookie-parser": "^1.4.3",
+    "express": "^4.15.3",
+    "express-mysql-session": "^1.2.0",
+    "express-session": "^1.15.3",
+    "lodash": "^4.17.4",
+    "mysql": "^2.13.0",
+    "passport": "^0.3.2",
+    "passport-local": "^1.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^3.4.2",
+    "nodemon": "^1.11.0"
+  }
+}
