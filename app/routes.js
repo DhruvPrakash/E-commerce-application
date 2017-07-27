@@ -83,8 +83,6 @@ module.exports = (app, passport, dbAdapter) => {
 
 		console.log(req.user);
 
-
-		console.log("captain planet");
 		dbAdapter.updateUserInfo(req.body, req.user.username).then((user) => {
 			
 			req.login(user, function(err) {
@@ -158,6 +156,59 @@ module.exports = (app, passport, dbAdapter) => {
 		} else {
 			res.json({"message" : "You must be an admin to perform this action"});
 		}
+	});
+
+	app.post('/buyProducts', auth, (req, res) => {
+		//need to check if product is valid...they give me asin and i need to see if this asin is there in the product table
+		//{“products”: [{“asin”: “asin”}, {“asin”: “asin”}, ...]}
+		let productsAsin = req.body.products.map((product) => {
+			return product.asin;
+		});
+
+		dbAdapter.buyProducts(productsAsin, req.user.username).then(()=>{
+			res.json({"message": "The action was successful"});
+		}, () => {
+			res.json({"message": "There are no products that match that criteria"});
+		});
+
+		// console.log(productsAsin);
+		// console.log(req.user);
+	});
+
+	app.post('/productsPurchased', auth, (req,res) => {
+		if(req.user.is_admin === 'Y') {
+			dbAdapter.getPurchaseHistory(req.body.username).then((purchaseHistory) => {
+				console.log(purchaseHistory);
+				if(purchaseHistory.length === 0) {
+					res.json({"message": "There are no users that match that criteria"});
+				} else {
+					let products = purchaseHistory.map(function(purchaseInstance){
+						return {
+							"productName" : purchaseInstance.product_name,
+							"quantity": purchaseInstance.frequency
+						}
+					});
+					res.json({"message" : "The action was successful", "products" : products});
+				}	
+			});
+		} else {
+			res.json({"message" : "You must be an admin to perform this action"});
+		}
+	});
+
+	app.post('/getRecommendations', auth, (req, res) => {
+		dbAdapter.getReccomendations(req.body.asin).then((asins) => {
+			if(asins.length === 0) {
+				res.json({"message" : "There are no recommendations for that product"});
+			} else {
+				let products = asins.map(function(asin) {
+					return {
+						"asin" : asin.co_bought_product
+					}
+				});
+				res.json({"message": "The action was successful", "products" : products});
+			}
+		});
 	});
 
 	app.post('/logout', (req, res) => {

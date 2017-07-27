@@ -10,17 +10,18 @@ let sessionStore = new MySqlStore(require('./config/database.js'));
 
 const mysql = require('mysql');
 const dbConfig = require('./config/database');
-const connection = mysql.createConnection(dbConfig);
+const connectionPool = mysql.createPool(dbConfig);
+//const connection = mysql.createConnection(dbConfig);
 
-connection.connect((err) => {
-	if(err){
-		console.log('error connecting to db');
-		return;
-	}
-	console.log('connection established');
-});
+// connection.connect((err) => {
+// 	if(err){
+// 		console.log('error connecting to db');
+// 		return;
+// 	}
+// 	console.log('connection established');
+// });
 
-require('./config/passport')(passport, connection);
+require('./config/passport')(passport, connectionPool);
 
 app.use(cookieParser());
 app.use(bodyParser.json());
@@ -40,7 +41,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-const dbAdapter = require('./adapters/dbAdapter')(connection);
+const dbAdapter = require('./adapters/dbAdapter')(connectionPool);
 
 //========== routes==========
 require('./app/routes.js')(app, passport, dbAdapter);

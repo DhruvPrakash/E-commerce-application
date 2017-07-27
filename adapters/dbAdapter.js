@@ -31,8 +31,25 @@ let renameForUser = (req) => {
 	return obj;
 }
 
+let constructPermstring = (asinArr) => {
+    let permString = '';
+    let asinsToBePermed = [];
+    asinArr.forEach((asin) => {
+        if(asinsToBePermed.length === 0) {
+            asinsToBePermed.push(asin);
+        } else {
+            asinsToBePermed.forEach((asinToBePermed) => {
+                permString = permString + `('${asinToBePermed}','${asin}'),('${asin}','${asinToBePermed}')`; 
+            });
+            asinsToBePermed.push(asin);
+        }
+    });
 
-module.exports = (connection) => {
+    return permString;
+} 
+
+
+module.exports = (connectionPool) => {
     return {
         registerUser: (username, password, firstName, lastName, address, city, state, zip, email) => {
             let promise = new Promise((resolve, reject) => {
@@ -40,13 +57,17 @@ module.exports = (connection) => {
                 let columnValues = `'${username}', '${password}', '${firstName}', '${lastName}', '${address}', '${city}', '${state}', '${zip}', '${email}', 'N'`;
                 let queryString = `INSERT INTO auth (${columnNames}) VALUES (${columnValues})`;
 
-                connection.query(queryString, (err, rows) => {
-                    if (!err) {
-                        return resolve();
-                    } else {
-                        return reject();
-                    }
-                })
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(queryString, (err, rows) => {
+                        connection.release();
+                        if (!err) {
+                            return resolve();
+                        } else {
+                            return reject();
+                        }
+                    })
+                });
+                
             })
 
             return promise;
@@ -66,21 +87,29 @@ module.exports = (connection) => {
             	let queryString = arr.join(' AND ');
 
             	if(fname === undefined && lname === undefined) {
-            		connection.query('SELECT * FROM auth', (err, rows) => {
-            			if(!err) {
-            				return resolve(rows);
-            			} else {
-            				return reject();
-            			}
-            		});
+                    connectionPool.getConnection((err, connection) => {
+                        connection.query('SELECT * FROM auth', (err, rows) => {
+                            connection.release();
+                            if(!err) {
+                                return resolve(rows);
+                            } else {
+                                return reject();
+                            }
+                        });
+                    });
+            		
             	} else {
-            		connection.query(`SELECT * FROM auth WHERE ${queryString}`, (err, rows) => {
-            		    if (!err) {
-            		        return resolve(rows);
-            		    } else {
-            		        return reject();
-            		    }
-            		})
+                    connectionPool.getConnection((err, connection) => {
+                        connection.query(`SELECT * FROM auth WHERE ${queryString}`, (err, rows) => {
+                            connection.release();
+                            if (!err) {
+                                return resolve(rows);
+                            } else {
+                                return reject();
+                            }
+                        })
+                    });
+            		
             	}
 
                 
@@ -90,42 +119,38 @@ module.exports = (connection) => {
         },
 
         updateUserInfo: (req, currentUsername) => {
-        	console.log("in update user info");
         	let columnObj = renameForUser(req);
-        	console.log("got the column obj");
-        	console.log(columnObj);
         	let promise = new Promise((resolve, reject) => {
-        		console.log("inside the promised land");
-        		//check if columnobj username is undefined...
-        		console.log(columnObj.username);
         		let usernameToQuery = (columnObj.username !== undefined) ? columnObj.username : currentUsername; 
-        		//
-        		// if(columnObj.username !== username) {
-        		// 	connection.query(`UPDATE `)
-        		// }
-        		console.log(columnObj);
-        		console.log(usernameToQuery);
 
-        		connection.query(`UPDATE auth SET ? WHERE username = '${currentUsername}'`,columnObj, (err, rows) => {
-        			if(!err) {
-        				connection.query(`SELECT * FROM auth WHERE username = '${usernameToQuery}'`, (err, rows) => {
-        					if(!err) {
-        						console.log(rows[0]);
-        						return resolve(rows[0]);
-        					} else {
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(`UPDATE auth SET ? WHERE username = '${currentUsername}'`,columnObj, (err, rows) => {
+                        connection.release();
+                        if(!err) {
+                            connectionPool.getConnection((err, connection) => {
+                                connection.query(`SELECT * FROM auth WHERE username = '${usernameToQuery}'`, (err, rows) => {
+                                    connection.release();
+                                    if(!err) {
+                                        console.log(rows[0]);
+                                        return resolve(rows[0]);
+                                    } else {
 
-        						console.log("err in selecting");
-        						console.log(err);
-        						return reject();
-        					}
-        				})
-        				
-        			} else {
-        				console.log("err in updating");
-        				console.log(err);
-        				return reject();
-        			}
-        		});
+                                        console.log("err in selecting");
+                                        console.log(err);
+                                        return reject();
+                                    }
+                                });
+                            });
+                            
+                            
+                        } else {
+                            console.log("err in updating");
+                            console.log(err);
+                            return reject();
+                        }
+                    });
+                });
+        		
         	});
         	return promise;
         },
@@ -135,14 +160,17 @@ module.exports = (connection) => {
                 let columnNames = 'asin, product_name, product_description, group_name';
                 let columnValues = `'${asin}', '${productName}', '${productDescription}', '${group}'`;
                 let queryString = `INSERT INTO products (${columnNames}) VALUES (${columnValues})`;
-
-                connection.query(queryString, (err, rows) => {
-                    if (!err) {
-                        return resolve();
-                    } else {
-                        return reject();
-                    }
-                })
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(queryString, (err, rows) => {
+                        connection.release();
+                        if (!err) {
+                            return resolve();
+                        } else {
+                            return reject();
+                        }
+                    });
+                });
+                
             })
 
             return promise;
@@ -152,14 +180,18 @@ module.exports = (connection) => {
             let promise = new Promise((resolve, reject) => {
                 let queryString = `UPDATE products set product_name = '${productName}', product_description = '${productDescription}', group_name = '${group}' WHERE asin = '${asin}'`;
                 console.log(queryString);
-                connection.query(queryString, (err, rows) => {
-                    if (!err) {
-                        return resolve();
-                    } else {
-                        return reject();
-                    }
-                })
-            })
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(queryString, (err, rows) => {
+                        connection.release();
+                        if (!err) {
+                            return resolve();
+                        } else {
+                            return reject();
+                        }
+                    })
+                });
+                
+            });
 
             return promise;
         },
@@ -180,33 +212,133 @@ module.exports = (connection) => {
                 }
 
                 if(keywordPresent) {
-                	arr.push(`(product_name LIKE '%${keyword}%' OR product_description LIKE '%${keyword}%')`);
+                    //arr.push(`MATCH (product_name, product_description) against ('${keyword}') limit 1000`);
+                	//arr.push(`(product_name LIKE '%${keyword}%' OR product_description LIKE '%${keyword}%')`);
+                    arr.push(`MATCH (product_name, product_description) against ('${keyword}')`);
+
                 }
 
 
                 let queryString = arr.join(' AND ');
 
                 if(!asinPresent && !groupPresent && !keywordPresent) {
-                	connection.query('SELECT * FROM products', (err,rows) => {
-                		if (!err) {
-                		    return resolve(rows);
-                		} else {
-                		    return reject();
-                		}
-                	});
+                	connectionPool.getConnection((err, connection) => {
+                        connection.query('SELECT * FROM products limit 1000', (err,rows) => {
+                            connection.release();
+                            if (!err) {
+                                return resolve(rows);
+                            } else {
+                                return reject();
+                            }
+                        });
+                    });
+                    
                 } else {
-                	connection.query(`SELECT * FROM products WHERE ${queryString}`, (err, rows) => {
-                		if(!err) {
-                			return resolve(rows);
-                		} else {
-                			return reject();
-                		}
-                	})
+                    console.log(queryString);
+                    connectionPool.getConnection((err, connection) => {
+                        if(err !== undefined) {
+                            console.log(err);
+                        }
+                        connection.query(`SELECT * FROM products WHERE ${queryString} limit 5`, (err, rows) => {
+                            connection.release();
+                            if(!err) {
+                                return resolve(rows);
+                            } else {
+                                return reject();
+                            }
+                        });
+                    });
+                	
                 }
 
                 
             });
 
+            return promise;
+        },
+
+
+        buyProducts: (productsAsin, username) => {
+            let promise = new Promise((resolve, reject) => {
+                
+                let valuesToBeInserted = productsAsin.map((productAsin) => {
+                    return `('${productAsin}','${username}')`;
+                });
+
+                let valuesToBeInsertedString = valuesToBeInserted.join(',');
+                console.log(`INSERT INTO purchased_products (asin, username) values ${valuesToBeInsertedString}`);
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(`INSERT INTO purchased_products (asin, username) values ${valuesToBeInsertedString}`, (err,rows) => {
+                        connection.release();
+                        if(!err) {
+                            let unqiqueAsins = [...new Set(productsAsin)];
+                            if(unqiqueAsins.length > 1) {
+                                let permString = constructPermstring(unqiqueAsins);
+                                connectionPool.getConnection((err, connection) => {
+                                    connection.query(`INSERT INTO recommendations (bought_product, co_bought_product) values ${permString}`, (err, rows) => {
+                                        connection.release();
+                                        if(!err) {
+                                            console.log("resolve reached 1");
+                                            return resolve();
+                                        } else {
+                                            console.log(err);
+                                            console.log("reject reached 1");
+                                            return reject();
+                                        }
+                                    });
+                                });
+                                
+                            } else {
+                                console.log("resolve reached 1")
+                                return resolve();
+                            }                        
+                        } else {
+                            console.log(err);
+                            console.log("reject reached 2");
+                            return reject();
+                        }
+                    });
+                });
+                
+
+            });
+
+            return promise;
+        }, 
+
+        getPurchaseHistory: (username) => {
+            let promise = new Promise((resolve, reject) => {
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(`SELECT product_name, count(*) as frequency FROM purchased_products JOIN products ON purchased_products.asin = products.asin GROUP BY username, purchased_products.asin HAVING username='${username}'`, (err, rows) => {
+                        connection.release();
+                        if(!err) {
+                            return resolve(rows);
+                        } else {
+                            return reject();
+                        }
+                    });
+                })
+                
+            });
+
+            return promise;
+        },
+
+        getReccomendations: (asin) => {
+            let promise = new Promise((resolve, reject) => {
+                connectionPool.getConnection((err, connection) => {
+                    connection.query(`SELECT co_bought_product, bought_product FROM recommendations GROUP BY co_bought_product HAVING bought_product = '${asin}' ORDER BY count(*) DESC LIMIT 5`, (err, rows) => {
+                        connection.release();
+                        if(!err) {
+                            return resolve(rows);
+                        } else {
+                            console.log(err);
+                            return reject();
+                        }
+                    });
+                })
+                
+            });
             return promise;
         }
     }

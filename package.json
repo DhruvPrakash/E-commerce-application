@@ -1,7 +1,7 @@
 {
   "name": "session-mgmt",
   "version": "1.0.0",
-  "description": "Initial tinkering with node until I figure out how to manage sessions",
+  "description": "E-commerce services",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
