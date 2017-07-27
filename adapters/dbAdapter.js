@@ -271,10 +271,14 @@ module.exports = (connectionPool) => {
                     connection.query(`INSERT INTO purchased_products (asin, username) values ${valuesToBeInsertedString}`, (err,rows) => {
                         connection.release();
                         if(!err) {
+                            console.log("productsAsin " + productsAsin);
                             let unqiqueAsins = [...new Set(productsAsin)];
+                            console.log("unqiqueAsins " + unqiqueAsins);
                             if(unqiqueAsins.length > 1) {
                                 let permString = constructPermstring(unqiqueAsins);
                                 connectionPool.getConnection((err, connection) => {
+                                    console.log("RECOMMENDATIONS INSERT");
+                                    console.log(`INSERT INTO recommendations (bought_product, co_bought_product) values ${permString}`);
                                     connection.query(`INSERT INTO recommendations (bought_product, co_bought_product) values ${permString}`, (err, rows) => {
                                         connection.release();
                                         if(!err) {
