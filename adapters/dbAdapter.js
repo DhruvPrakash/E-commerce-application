@@ -215,7 +215,6 @@ module.exports = (connectionPool) => {
                     //arr.push(`MATCH (product_name, product_description) against ('${keyword}') limit 1000`);
                 	//arr.push(`(product_name LIKE '%${keyword}%' OR product_description LIKE '%${keyword}%')`);
                     arr.push(`MATCH (product_name, product_description) against ('${keyword}')`);
-
                 }
 
 
