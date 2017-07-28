@@ -237,6 +237,7 @@ module.exports = (connectionPool) => {
                     connectionPool.getConnection((err, connection) => {
                         if(err !== undefined) {
                             console.log(err);
+                            
                         }
                         connection.query(`SELECT * FROM products WHERE ${queryString} limit 200`, (err, rows) => {
                             connection.release();
