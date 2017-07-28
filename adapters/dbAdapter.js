@@ -248,7 +248,7 @@ module.exports = (connectionPool) => {
                                 }
                             });
                         } else {
-                            connection.query(`SELECT *, CASE WHEN product_name = '${keyword}' THEN 1 ELSE 0 END AS score, MATCH ('product_name', 'product_description') AGAINST('${keyword}') AS score2 FROM 'products' WHERE MATCH ('product_name', 'product_description') AGAINST('${keyword}') ORDER BY score DESC, score2 DESC limit 5`, (err, rows) => {
+                            connection.query(`SELECT *, CASE WHEN product_name = '${keyword}' THEN 1 ELSE 0 END AS score, MATCH (product_name, product_description) AGAINST('${keyword}') AS score2 FROM products WHERE MATCH (product_name, product_description) AGAINST('${keyword}') ORDER BY score DESC, score2 DESC limit 5`, (err, rows) => {
                                 connection.release();
                                 if(!err) {
                                     return resolve(rows);
